@@ -122,7 +122,7 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="flex items-center justify-center flex-1 flex-col mt-12 px-[112px]">
+      <div className="flex items-center justify-center flex-1 flex-col mt-12">
         <Typography variant="h2" className="font-bold text-[#272D37] mb-6">
           A tool for LaborDAO
         </Typography>

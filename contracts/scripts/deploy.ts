@@ -6,13 +6,13 @@ async function main() {
 
   const lockedAmount = ethers.utils.parseEther("0.001");
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  const FairSharing = await ethers.getContractFactory("FairSharing");
+  const fairSharing = await FairSharing.deploy("TokenName", "TokenSymbol");
 
-  await lock.deployed();
+  await fairSharing.deployed();
 
   console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+    `Deployed to ${fairSharing.address}`
   );
 }
 

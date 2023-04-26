@@ -14,24 +14,26 @@ describe("FairSharing", function () {
 
     // Contracts are deployed using the first signer/account by default
     const [owner, ...otherAccounts] = await ethers.getSigners();
+    const members = [await otherAccounts[0].getAddress(), await otherAccounts[1].getAddress(), await otherAccounts[2].getAddress()]
 
     const FairSharing = await ethers.getContractFactory("FairSharing");
-    const fairSharing = await FairSharing.deploy("TokenName", "TokenSymbol");
+    const fairSharing = await FairSharing.deploy("TokenName", "TokenSymbol", members);
 
     return { fairSharing, owner, otherAccounts };
   }
   describe("Claim", function () {
     it("Should claim right amount token", async function () {
       const { fairSharing, owner } = await loadFixture(deployFairSharingFixture);
+      const contributionId = 1
       const address = await owner.getAddress()
       const points = utils.parseEther("1")
       const msgHash = utils.solidityKeccak256(
-        ['address', 'bool', 'uint256'], 
-        [address, true, points]
+        ['uint256', 'address', 'bool', 'uint256'], 
+        [contributionId, address, true, points]
       ) 
       const signature = owner.signMessage(utils.arrayify(msgHash))
 
-      const tx = await fairSharing.claim(address, true, points, signature)
+      const tx = await fairSharing.claim(contributionId, address, true, points, signature)
       await tx.wait()
 
       const claimedToken = await fairSharing.balanceOf(address)

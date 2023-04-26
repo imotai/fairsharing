@@ -2,11 +2,14 @@
 pragma solidity ^0.8.9;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
 contract FairSharing is ERC20, Ownable {
+    using ECDSA for bytes32;
+
     mapping (address => bool) public members;
     uint totalMembers; 
     
@@ -24,4 +27,15 @@ contract FairSharing is ERC20, Ownable {
         totalMembers--;
     }
 
+    function claim(address member, bool approve, uint points, bytes calldata signature) external {
+        // TODO: how to prevent multiple claim? maybe need a work record?
+        bytes memory data = abi.encodePacked(member, approve, points);
+        address dataSigner = keccak256(data).toEthSignedMessageHash().recover(signature);
+        require(dataSigner == member);
+        _mint(member, points); 
+    }
+
+    function deposit() external payable {
+
+    }
 }

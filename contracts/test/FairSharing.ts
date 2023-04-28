@@ -115,5 +115,43 @@ describe("FairSharing", function () {
       const claimedToken = await fairSharing.balanceOf(claimer.address);
       expect(claimedToken.eq(points)).to.be.true;
     });
+
+    it("Should prevent double claim", async function () {
+      const { fairSharing, otherAccounts } = await loadFixture(
+        deployFairSharingFixture
+      );
+      const contributionId = 1;
+      const contributor = otherAccounts[0];
+      const points = utils.parseEther("1");
+      const votes = await Promise.all(
+        otherAccounts.slice(0, 2).map(async (voterAccount) => {
+          const voter = await voterAccount.getAddress();
+          const approve = true;
+          const msgHash = utils.solidityKeccak256(
+            ["address", "uint256", "address", "bool", "uint256"],
+            [contributor.address, contributionId, voter, approve, points]
+          );
+          const signature = await voterAccount.signMessage(
+            utils.arrayify(msgHash)
+          );
+          return {
+            voter,
+            approve,
+            signature,
+          };
+        })
+      );
+
+      const claimer = contributor;
+
+      const tx = await fairSharing
+        .connect(claimer)
+        .claim(contributionId, points, votes);
+      await tx.wait();
+
+      await expect(
+        fairSharing.claim(contributionId, points, votes)
+      ).to.be.revertedWith("Already claimed");
+    });
   });
 });

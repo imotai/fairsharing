@@ -24,6 +24,9 @@ contract FairSharing is ERC20, Ownable {
     
     constructor(string memory name, string memory symbol, address[] memory _membersList) ERC20(name, symbol) {
         membersList = _membersList;
+        for (uint i=0; i<_membersList.length; i++) {
+            members[_membersList[i]] = true;
+        }
     }
 
     function addMember(address member) external onlyOwner {
@@ -40,19 +43,19 @@ contract FairSharing is ERC20, Ownable {
     // TODO: 
     // - A map record claim status. 
     function claim(uint contributionId, uint points, Vote[] calldata votes) external {
-        // TODO: caller should be owner of this contribution
+        require(members[msg.sender], "Not a member");
         // TODO: how to prevent multiple claim? maybe need a work record?
         uint approvedVotes;
         // TODO: remove duplicated vote?
         for (uint i=0; i<votes.length; i++) {
-            bytes memory data = abi.encodePacked(contributionId, votes[i].voter, votes[i].approve, points);
+            bytes memory data = abi.encodePacked(msg.sender, contributionId, votes[i].voter, votes[i].approve, points);
             address dataSigner = keccak256(data).toEthSignedMessageHash().recover(votes[i].signature);
-            require(dataSigner == votes[i].voter, "wrong signature"); 
+            require(dataSigner == votes[i].voter, "Wrong signature"); 
             if (votes[i].approve) {
                 approvedVotes++;
             }
         }
-        require (approvedVotes >= totalMembers/2, "not enough voters");
+        require (approvedVotes >= totalMembers/2, "Not enough voters");
 
         _mint(msg.sender, points); 
     }

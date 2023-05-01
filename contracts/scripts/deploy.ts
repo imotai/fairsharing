@@ -1,18 +1,15 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const signers = await ethers.getSigners();
+  const members = [await signers[0].getAddress(), await signers[1].getAddress(), await signers[2].getAddress()]
+  const FairSharing = await ethers.getContractFactory("FairSharing");
+  const fairSharing = await FairSharing.deploy("TokenName", "TokenSymbol", members);
 
-  const lockedAmount = ethers.utils.parseEther("0.001");
-
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-
-  await lock.deployed();
+  await fairSharing.deployed();
 
   console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+    `Deployed to ${fairSharing.address}`
   );
 }
 

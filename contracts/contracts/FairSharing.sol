@@ -31,6 +31,7 @@ contract FairSharing is ERC20, Ownable, DAO {
     string memory symbol,
     address[] memory _membersList
   ) ERC20(name, symbol) {
+    // TODO DAO.initialize(xxx)
     membersList = _membersList;
     for (uint i = 0; i < _membersList.length; i++) {
       members[_membersList[i]] = true;

@@ -11,12 +11,14 @@ import {
 } from '@mui/material'
 import { Remove, Add } from '@mui/icons-material'
 import Image from 'next/image'
+import { useAccount } from 'wagmi'
 
 let index = 1
 export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const [contributors, setContributors] = useState([1])
   const [isLoading, setIsLoading] = useState(false)
+  const { isConnected } = useAccount()
 
   const handleCreate = useCallback(() => {
     setIsCreating(false)
@@ -32,6 +34,17 @@ export default function Home() {
   }, [])
 
   const children = useMemo(() => {
+    if (!isConnected) {
+      return (
+        <Button
+          size="large"
+          variant="contained"
+          onClick={() => setIsCreating(true)}
+        >
+          Create a project
+        </Button>
+      )
+    }
     if (isLoading) {
       return (
         <div className="flex w-full justify-between">
@@ -64,17 +77,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-      )
-    }
-    if (!isCreating) {
-      return (
-        <Button
-          size="large"
-          variant="contained"
-          onClick={() => setIsCreating(true)}
-        >
-          Create a project
-        </Button>
       )
     }
     return (
@@ -118,7 +120,7 @@ export default function Home() {
         </FormControl>
       </>
     )
-  }, [isCreating, contributors, isLoading])
+  }, [isCreating, contributors, isLoading, isConnected])
 
   return (
     <Layout>

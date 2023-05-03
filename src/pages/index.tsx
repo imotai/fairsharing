@@ -12,6 +12,7 @@ import {
 import { Remove, Add } from '@mui/icons-material'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
+import Example from './Example'
 
 let index = 1
 export default function Home() {
@@ -134,8 +135,9 @@ export default function Home() {
         >
           Upgrade your side project into a DAO and turbocharge it.
         </Typography>
-        {children}
+        {/* {children} */}
       </div>
+      <Example />
     </Layout>
   )
 }

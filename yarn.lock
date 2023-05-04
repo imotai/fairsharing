@@ -3157,11 +3157,6 @@ bs58check@^2.1.2:
     create-hash "^1.1.0"
     safe-buffer "^5.1.2"
 
-bson@5.0.1:
-  version "5.0.1"
-  resolved "https://registry.npmjs.org/bson/-/bson-5.0.1.tgz"
-  integrity sha512-y09gBGusgHtinMon/GVbv1J6FrXhnr/+6hqLlSmEFzkz6PodqF6TxjyvfvY3AfO+oG1mgUtbC86xSbOlwvM62Q==
-
 buffer-from@^1.0.0:
   version "1.1.2"
   resolved "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz"
@@ -3791,10 +3786,15 @@ dashdash@^1.12.0:
   dependencies:
     assert-plus "^1.0.0"
 
-db3.js@^0.2.25-dev:
-  version "0.2.25-dev"
-  resolved "https://registry.npmjs.org/db3.js/-/db3.js-0.2.25-dev.tgz"
-  integrity sha512-BfHT2nhgmgIxICip05BPgagRrAqXJmcTIlPr7j1hzanepclOCa07WYTbsLd64CJP5Drck0S0tiWYuM/C4tFk2Q==
+db3-bson@5.1.2:
+  version "5.1.2"
+  resolved "https://registry.npmjs.org/db3-bson/-/db3-bson-5.1.2.tgz#3f5ddd81c5527d646d64ecf41e11b0887a87072a"
+  integrity sha512-NhH7GylEF1pX9zNv83nj7bZkuXSSwOrAa6i2Yn4eUz9XLJ6JiHkMFWbjIMk8Z2FAjOv47X5wtiJBu4BgG3aoOQ==
+
+db3.js@^0.2.27-dev:
+  version "0.2.27-dev"
+  resolved "https://registry.npmjs.org/db3.js/-/db3.js-0.2.27-dev.tgz#1d95a401e34346cfd36117ddc9f1b6e72e659d0f"
+  integrity sha512-HcLYJ829JyDGqyKBlnFYfnUTGzIUnMUS97lSi7iNZpQkfIftuD9tpkTkrqtOIBztwJo1FUQTOVSSTwc1jcun0g==
   dependencies:
     "@ethereumjs/util" "^8.0.5"
     "@metamask/eth-sig-util" "^5.0.2"
@@ -3804,8 +3804,8 @@ db3.js@^0.2.25-dev:
     "@protobuf-ts/runtime-rpc" "^2.8.2"
     "@scure/bip32" "^1.1.1"
     "@scure/bip39" "^1.1.1"
-    bson "5.0.1"
     buffer "^6.0.3"
+    db3-bson "5.1.2"
     events "^3.3.0"
     int64-buffer "^1.0.1"
     js-sha3 "^0.8.0"

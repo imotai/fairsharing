@@ -12,7 +12,18 @@ import {
 import { Remove, Add } from '@mui/icons-material'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
+import { ContractFactory } from 'ethers'
 
 export default function Example() {
-  return <Box>Test</Box>
+  return (
+    <Box>
+      <Button
+        onClick={async () => {
+          //  todo
+        }}
+      >
+        Create a DAO contract with name: FairDAO
+      </Button>
+    </Box>
+  )
 }

@@ -18,7 +18,6 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { object, string, array, TypeOf } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getProjects, store } from '@/store'
-import Example from './Example'
 
 const registerSchema = object({
   projectName: string({
@@ -208,7 +207,6 @@ export default function Home() {
         </Typography>
         {children}
       </div>
-      <Example />
     </Layout>
   )
 }

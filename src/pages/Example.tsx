@@ -22,7 +22,6 @@ export default function Example() {
   const [count, setCount] = useState(0)
   const [list, setList] = useState<string[]>([])
 
-  console.log('signer: ', signer)
   const factoryContract = useContract({
     // todo put in the env
     address: '0x5eE4dD2C7dE5e08c92BB578a116d07558a72C9EF',
@@ -33,8 +32,7 @@ export default function Example() {
 
   useEffect(() => {
     ;(async () => {
-      console.log('factoryContract: ', factoryContract)
-      if (factoryContract) {
+      if (factoryContract && signer) {
         const count = await factoryContract.getCount()
         setCount(parseInt(count))
         let list: string[] = []
@@ -43,10 +41,9 @@ export default function Example() {
           list = [...list, item]
         }
         setList(list)
-        console.log('list: ', list)
       }
     })()
-  }, [factoryContract])
+  }, [factoryContract, signer])
 
   return (
     <Box>

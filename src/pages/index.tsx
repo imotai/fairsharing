@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Layout from '@/layout'
 import {
+  Alert,
   Button,
   FormControl,
   IconButton,
   Skeleton,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material'
+import { LoadingButton } from '@mui/lab'
 import { Add, Remove } from '@mui/icons-material'
 import Image from 'next/image'
 import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
-import { useSnapshot } from 'valtio'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { array, object, string, TypeOf } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -36,12 +38,15 @@ type FormData = TypeOf<typeof registerSchema>
 export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [isDeploying, setIsDeploying] = useState(false)
 
   const { isConnected } = useAccount()
   const {
     control,
     formState: { errors },
     handleSubmit,
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(registerSchema),
   })
@@ -88,9 +93,25 @@ export default function Home() {
     }
   )
 
-  const handleFinish = useCallback((data: FormData) => {
-    console.log(data)
-  }, [])
+  const handleFinish = useCallback(
+    async (data: FormData) => {
+      setIsDeploying(true)
+      const { projectName, contributors } = data
+      const tx = await factoryContract?.createFairSharing(
+        projectName,
+        'FD',
+        contributors.map((item) => item.name),
+        address
+      )
+      await tx?.wait()
+      projectQuery.refetch()
+      setIsCreating(false)
+      setOpen(true)
+      setIsDeploying(false)
+      reset()
+    },
+    [address, factoryContract, projectQuery, reset]
+  )
 
   const handleCreate = useCallback(() => {
     if (!isConnected) {
@@ -187,15 +208,16 @@ export default function Home() {
     }
     return (
       <>
-        <Button
+        <LoadingButton
+          loading={isDeploying}
           size="large"
           variant="contained"
           onClick={handleCreate}
           className="mb-8"
         >
           Create a project
-        </Button>
-        <div className="flex w-full justify-between">
+        </LoadingButton>
+        <div className="w-full grid grid-cols-4 gap-10">
           {projectQuery.data?.map((item: any, index) => (
             <div
               key={index}
@@ -252,6 +274,20 @@ export default function Home() {
           Upgrade your side project into a DAO and turbocharge it.
         </Typography>
         {children}
+        <Snackbar
+          open={open}
+          onClose={() => setOpen(false)}
+          autoHideDuration={5000}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert
+            severity="success"
+            sx={{ width: '100%' }}
+            onClose={() => setOpen(false)}
+          >
+            Create Project Success!
+          </Alert>
+        </Snackbar>
       </div>
     </Layout>
   )

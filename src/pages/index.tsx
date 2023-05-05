@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Layout from '@/layout'
 import {
   Button,
@@ -35,9 +35,8 @@ type FormData = TypeOf<typeof registerSchema>
 
 export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
-  const [list, setList] = useState<string[]>([])
+  const [hasMounted, setHasMounted] = useState(false)
 
-  const snap = useSnapshot(store)
   const { isConnected } = useAccount()
   const {
     control,
@@ -82,6 +81,7 @@ export default function Home() {
           )
         )
       }
+      return []
     },
     {
       enabled: !!factoryContract && !!signer,
@@ -101,6 +101,7 @@ export default function Home() {
   }, [append, isConnected])
 
   const children = useMemo(() => {
+    if (!hasMounted) return null
     if (projectQuery.isFetching) {
       return (
         <div className="flex w-full justify-between">
@@ -184,34 +185,39 @@ export default function Home() {
         </>
       )
     }
-    console.log(projectQuery.data)
-    if (projectQuery.data?.length === 0) {
-      return (
-        <Button size="large" variant="contained" onClick={handleCreate}>
+    return (
+      <>
+        <Button
+          size="large"
+          variant="contained"
+          onClick={handleCreate}
+          className="mb-8"
+        >
           Create a project
         </Button>
-      )
-    }
-    return (
-      <div className="flex w-full justify-between">
-        {projectQuery.data?.map((item: any, index) => (
-          <div
-            key={index}
-            className="cursor-pointer border border-[#EAEBF0] border-solid w-[286px] h-[184px] mr-4 rounded flex flex-col justify-center items-center"
-          >
-            <Image
-              src="/projectIcon.png"
-              alt="projectIcon"
-              width={48}
-              height={48}
-              className="mb-3"
-            />
-            <Typography variant="subtitle1" className="text-lg text-[#5F6D7E]">
-              {item}
-            </Typography>
-          </div>
-        ))}
-      </div>
+        <div className="flex w-full justify-between">
+          {projectQuery.data?.map((item: any, index) => (
+            <div
+              key={index}
+              className="cursor-pointer border border-[#EAEBF0] border-solid w-[286px] h-[184px] mr-4 rounded flex flex-col justify-center items-center"
+            >
+              <Image
+                src="/projectIcon.png"
+                alt="projectIcon"
+                width={48}
+                height={48}
+                className="mb-3"
+              />
+              <Typography
+                variant="subtitle1"
+                className="text-lg text-[#5F6D7E]"
+              >
+                {item}
+              </Typography>
+            </div>
+          ))}
+        </div>
+      </>
     )
   }, [
     projectQuery.isLoading,
@@ -226,7 +232,12 @@ export default function Home() {
     handleSubmit,
     handleFinish,
     handleCreate,
+    hasMounted,
   ])
+
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
 
   return (
     <Layout>

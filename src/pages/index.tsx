@@ -21,6 +21,7 @@ import { getProjects, store } from '@/store'
 import factoryabi from '@/factoryabi.json'
 import fairSharingAbi from '@/fairSharingAbi.json'
 import { readContract } from '@wagmi/core'
+import { useRouter } from 'next/router'
 
 const registerSchema = object({
   projectName: string({
@@ -41,6 +42,7 @@ export default function Home() {
   const [open, setOpen] = useState(false)
   const [isDeploying, setIsDeploying] = useState(false)
 
+  const router = useRouter()
   const { isConnected } = useAccount()
   const {
     control,
@@ -76,7 +78,7 @@ export default function Home() {
           const item = await factoryContract.fairSharings(i)
           list = [...list, item]
         }
-        return await Promise.all(
+        const data = (await Promise.all(
           list.map((address: any) =>
             readContract({
               address,
@@ -84,7 +86,11 @@ export default function Home() {
               functionName: 'name',
             })
           )
-        )
+        )) as string[]
+        return data.map((item, index) => ({
+          name: item,
+          address: list[index],
+        }))
       }
       return []
     },
@@ -120,6 +126,13 @@ export default function Home() {
     append({ name: '' })
     setIsCreating((v) => !v)
   }, [append, isConnected])
+
+  const handleClickDetail = useCallback(
+    (address: string) => {
+      router.push(`/project?address=${address}`)
+    },
+    [router]
+  )
 
   const children = useMemo(() => {
     if (!hasMounted) return null
@@ -196,11 +209,20 @@ export default function Home() {
               <Button
                 size="large"
                 variant="contained"
+                className="w-[150px] mt-4 mr-8"
+                onClick={() => setIsCreating(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                loading={isDeploying}
+                size="large"
+                variant="contained"
                 className="w-[150px] mt-4"
                 type="submit"
               >
                 Done
-              </Button>
+              </LoadingButton>
             </form>
           </FormControl>
         </>
@@ -208,20 +230,20 @@ export default function Home() {
     }
     return (
       <>
-        <LoadingButton
-          loading={isDeploying}
+        <Button
           size="large"
           variant="contained"
           onClick={handleCreate}
           className="mb-8"
         >
           Create a project
-        </LoadingButton>
+        </Button>
         <div className="w-full grid grid-cols-4 gap-10">
-          {projectQuery.data?.map((item: any, index) => (
+          {projectQuery.data?.map((item, index) => (
             <div
               key={index}
               className="cursor-pointer border border-[#EAEBF0] border-solid w-[286px] h-[184px] mr-4 rounded flex flex-col justify-center items-center"
+              onClick={() => handleClickDetail(item.address)}
             >
               <Image
                 src="/projectIcon.png"
@@ -234,7 +256,7 @@ export default function Home() {
                 variant="subtitle1"
                 className="text-lg text-[#5F6D7E]"
               >
-                {item}
+                {item.name}
               </Typography>
             </div>
           ))}

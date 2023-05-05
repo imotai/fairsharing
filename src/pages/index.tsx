@@ -1,23 +1,24 @@
 import { useCallback, useMemo, useState } from 'react'
 import Layout from '@/layout'
 import {
-  Typography,
   Button,
   FormControl,
-  TextField,
   IconButton,
   Skeleton,
-  Box,
+  TextField,
+  Typography,
 } from '@mui/material'
-import { Remove, Add } from '@mui/icons-material'
+import { Add, Remove } from '@mui/icons-material'
 import Image from 'next/image'
-import { useAccount } from 'wagmi'
-import { useQuery } from 'wagmi'
+import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
 import { useSnapshot } from 'valtio'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
-import { object, string, array, TypeOf } from 'zod'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { array, object, string, TypeOf } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getProjects, store } from '@/store'
+import factoryabi from '@/factoryabi.json'
+import fairSharingAbi from '@/fairSharingAbi.json'
+import { readContract } from '@wagmi/core'
 
 const registerSchema = object({
   projectName: string({
@@ -34,6 +35,8 @@ type FormData = TypeOf<typeof registerSchema>
 
 export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
+  const [list, setList] = useState<string[]>([])
+
   const snap = useSnapshot(store)
   const { isConnected } = useAccount()
   const {
@@ -50,9 +53,40 @@ export default function Home() {
     }
   )
 
-  const projectQuery = useQuery(['getProjects'], getProjects, {
-    enabled: isConnected && !!snap.db,
+  const { address } = useAccount()
+  const { data: signer } = useSigner()
+  const factoryContract = useContract({
+    // todo put in the env
+    address: '0x5eE4dD2C7dE5e08c92BB578a116d07558a72C9EF',
+    abi: factoryabi,
+    signerOrProvider: signer,
   })
+
+  const projectQuery = useQuery(
+    ['getProjects'],
+    async () => {
+      if (factoryContract && signer) {
+        const count = await factoryContract.getCount()
+        let list: string[] = []
+        for (let i = 0; i < count; i++) {
+          const item = await factoryContract.fairSharings(i)
+          list = [...list, item]
+        }
+        return await Promise.all(
+          list.map((address: any) =>
+            readContract({
+              address,
+              abi: fairSharingAbi,
+              functionName: 'name',
+            })
+          )
+        )
+      }
+    },
+    {
+      enabled: !!factoryContract && !!signer,
+    }
+  )
 
   const handleFinish = useCallback((data: FormData) => {
     console.log(data)
@@ -67,7 +101,7 @@ export default function Home() {
   }, [append, isConnected])
 
   const children = useMemo(() => {
-    if (projectQuery.isLoading) {
+    if (projectQuery.isFetching) {
       return (
         <div className="flex w-full justify-between">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -150,7 +184,8 @@ export default function Home() {
         </>
       )
     }
-    if (!isConnected || projectQuery.data?.length === 0) {
+    console.log(projectQuery.data)
+    if (projectQuery.data?.length === 0) {
       return (
         <Button size="large" variant="contained" onClick={handleCreate}>
           Create a project
@@ -159,10 +194,10 @@ export default function Home() {
     }
     return (
       <div className="flex w-full justify-between">
-        {[1].map((item, index) => (
+        {projectQuery.data?.map((item: any, index) => (
           <div
             key={index}
-            className="cursor-pointer border border-[#EAEBF0] border-solid w-[286px] h-[184px] rounded flex flex-col justify-center items-center"
+            className="cursor-pointer border border-[#EAEBF0] border-solid w-[286px] h-[184px] mr-4 rounded flex flex-col justify-center items-center"
           >
             <Image
               src="/projectIcon.png"
@@ -172,7 +207,7 @@ export default function Home() {
               className="mb-3"
             />
             <Typography variant="subtitle1" className="text-lg text-[#5F6D7E]">
-              Hackathon DAO
+              {item}
             </Typography>
           </div>
         ))}
@@ -180,7 +215,7 @@ export default function Home() {
     )
   }, [
     projectQuery.isLoading,
-    projectQuery.data?.length,
+    projectQuery.data,
     isCreating,
     isConnected,
     control,

@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { ethers, utils } from 'ethers'
 import { useAccount, useContract, useSigner } from 'wagmi'
 import factoryabi from '../factoryabi.json'
+import instanceabi from '../instanceabi.json'
 
 export default function Example() {
   const { address } = useAccount()
@@ -32,6 +33,14 @@ export default function Example() {
     signerOrProvider: signer,
   })
   // todo detect and auto refresh the list
+
+  // todo need to create a new component or find a way to update the contact address
+  const fairSharingContract = useContract({
+    address: '0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266',
+    abi: instanceabi,
+    signerOrProvider: signer,
+  })
+  console.log('fairSharingContract: ', fairSharingContract)
 
   useEffect(() => {
     ;(async () => {
@@ -56,7 +65,7 @@ export default function Example() {
             'FairDAO',
             'FD',
             // todo add the member lists
-            [address],
+            ['', '', ''],
             address
           )
           // todo pop up the notification or toast
@@ -77,10 +86,10 @@ export default function Example() {
       <Box>
         <Button
           onClick={() => {
-            setCurrentDAO(list[0])
+            setCurrentDAO('0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266')
           }}
         >
-          Use the first DAO as example
+          Use the 0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266 DAO as example
         </Button>
       </Box>
       <Box>current dao: {currentDAO}</Box>
@@ -94,10 +103,10 @@ export default function Example() {
           <Button
             onClick={async () => {
               const msgHash = utils.solidityKeccak256(
-                ['address', 'string', 'address', 'bool', 'uint256'],
+                ['address', 'uint256', 'address', 'bool', 'uint256'],
                 [
                   '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
-                  '36f38aff-c171-4461-9c4d-a2f7eafee2da',
+                  1,
                   await signer?.getAddress(),
                   true,
                   utils.parseEther('30'),
@@ -111,7 +120,44 @@ export default function Example() {
           >
             Approve
           </Button>{' '}
-          <Button>Decline</Button> <Button>Claim</Button>
+          <Button
+            onClick={async () => {
+              const msgHash = utils.solidityKeccak256(
+                ['address', 'uint256', 'address', 'bool', 'uint256'],
+                [
+                  '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
+                  1,
+                  await signer?.getAddress(),
+                  false,
+                  utils.parseEther('30'),
+                ]
+              )
+              const signature = await signer?.signMessage(
+                utils.arrayify(msgHash)
+              )
+              console.log('signature: ', signature)
+            }}
+          >
+            Decline
+          </Button>{' '}
+          <Button
+            onClick={async () => {
+              console.log('fairSharingContract: ', fairSharingContract)
+              const tx = fairSharingContract?.claim(1, utils.parseEther('30'), [
+                {
+                  voter: '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
+                  approve: true,
+                  signature: '',
+                },
+              ])
+              // todo pop up the notification or toast
+              console.log('tx', tx)
+            }}
+          >
+            Claim
+          </Button>
+          Notes: 1. only record creator can claim. 2. the creator must be a
+          member.
         </Box>
       )}
     </Box>

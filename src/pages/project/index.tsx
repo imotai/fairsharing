@@ -22,7 +22,13 @@ import {
   TextField,
 } from '@mui/material'
 import { useRouter } from 'next/router'
-import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
+import {
+  useAccount,
+  useContract,
+  useQuery,
+  useSigner,
+  useContractRead,
+} from 'wagmi'
 import fairSharingAbi from '@/fairSharingabi.json'
 import { addRecord, getRecords, store } from '@/store'
 import { useSnapshot } from 'valtio'
@@ -40,15 +46,22 @@ type FormData = TypeOf<typeof registerSchema>
 
 const Project = () => {
   const router = useRouter()
-  const contractAddress = router.query.address as string
+  const contractAddress = router.query.address as any
   const snap = useSnapshot(store)
   const { address } = useAccount()
   const { data: signer } = useSigner()
-  const factoryContract = useContract({
+  const fairSharingContract = useContract({
     address: contractAddress,
     abi: fairSharingAbi,
     signerOrProvider: signer,
   })
+  const { data, isError, isLoading } = useContractRead({
+    address: contractAddress,
+    abi: fairSharingAbi,
+    functionName: 'members',
+    args: [address],
+  })
+  console.log(data, address)
   const {
     control,
     formState: { errors },
@@ -85,6 +98,8 @@ const Project = () => {
   const handleFinish = useCallback(
     async (data: FormData) => {
       if (!address) return
+      console.log(await fairSharingContract?.members(address))
+      return
       const { contribution, point } = data
       await addRecord({
         contribution,

@@ -98,8 +98,7 @@ const Project = () => {
   const handleFinish = useCallback(
     async (data: FormData) => {
       if (!address) return
-      console.log(await fairSharingContract?.members(address))
-      return
+      // TODO 鉴权
       const { contribution, point } = data
       await addRecord({
         contribution,

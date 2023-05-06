@@ -65,9 +65,10 @@ const Project = () => {
   useEffect(() => {
     ;(async () => {
       if (fairSharingContract && fairSharingContract.provider) {
+        
         console.log('fairSharingContract: ', fairSharingContract)
         const members = await fairSharingContract.totalMembers()
-        console.log('members: ', members)
+        console.log('members: ', parseInt(members))
       }
     })()
   }, [fairSharingContract])

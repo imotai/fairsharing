@@ -139,8 +139,8 @@ export default function Home() {
     if (projectQuery.isFetching) {
       return (
         <div className="flex w-full justify-between">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton variant="rectangular" width={210} height={118} key={i} />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton variant="rectangular" width={286} height={184} key={i} />
           ))}
         </div>
       )

@@ -14,7 +14,7 @@ import Image from 'next/image'
 import { ethers, utils } from 'ethers'
 import { useAccount, useContract, useSigner } from 'wagmi'
 import factoryabi from '../factoryabi.json'
-import instanceabi from '../instanceabi.json'
+import instanceabi from '../fairSharingabi.json'
 
 export default function Example() {
   const { address } = useAccount()

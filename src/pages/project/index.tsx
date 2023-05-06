@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Layout from '@/layout'
 import {
   Breadcrumbs,
@@ -55,13 +55,23 @@ const Project = () => {
     abi: fairSharingAbi,
     signerOrProvider: signer,
   })
-  const { data, isError, isLoading } = useContractRead({
-    address: contractAddress,
-    abi: fairSharingAbi,
-    functionName: 'members',
-    args: [address],
-  })
-  console.log(data, address)
+  // const { data, isError, isLoading } = useContractRead({
+  //   address: contractAddress,
+  //   abi: fairSharingAbi,
+  //   functionName: 'membersList',
+  //   args: [0],
+  // })
+
+  useEffect(() => {
+    ;(async () => {
+      if (fairSharingContract && fairSharingContract.provider) {
+        console.log('fairSharingContract: ', fairSharingContract)
+        const members = await fairSharingContract.totalMembers()
+        console.log('members: ', members)
+      }
+    })()
+  }, [fairSharingContract])
+
   const {
     control,
     formState: { errors },

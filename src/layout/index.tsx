@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import Header from './header'
 import Footer from './footer'
-import { addDB } from '@/store'
+import { addDB, store } from '@/store'
 
 // @ts-ignore
 const Layout = ({ children }) => {
@@ -11,18 +11,7 @@ const Layout = ({ children }) => {
 
   useEffect(() => {
     if (!isConnected) return
-    const init = async () => {
-      // @ts-ignore
-      const wallet = new MetamaskWallet(window)
-      await wallet.connect()
-      const { db } = initializeDB3(
-        'https://grpc.devnet.db3.network',
-        '0xf94c8287560cd1572d81e67e25c995eb23b759b4',
-        wallet
-      )
-      addDB(db)
-    }
-    init()
+    addDB()
   }, [isConnected])
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F9FB]">

@@ -25,7 +25,8 @@ import {
 import { useRouter } from 'next/router'
 import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
 import fairSharingAbi from '@/fairSharingabi.json'
-import { addRecord, getRecords } from '@/store'
+import { addRecord, getRecords, store } from '@/store'
+import { useSnapshot } from 'valtio'
 
 function createData(
   name: string,
@@ -48,6 +49,7 @@ const rows = [
 const Project = () => {
   const router = useRouter()
   const contractAddress = router.query.address as string
+  const snap = useSnapshot(store)
   const { address } = useAccount()
   const { data: signer } = useSigner()
   const factoryContract = useContract({
@@ -63,19 +65,10 @@ const Project = () => {
     ['getRecords', contractAddress],
     () => getRecords(contractAddress),
     {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress && store.initDb,
     }
   )
-
-  useEffect(() => {
-    // addRecord({
-    //   contract: '0x7e55AcDff1189e932A73af678A2B9cE76dBf8544',
-    //   status: 0,
-    //   user: '0xC664B68aFceD392656Ed8c4adaEFa8E8ffBF65DC',
-    //   point: 30,
-    //   contribution: '12321312',
-    // })
-  }, [])
+  console.log(recordsQuery.data)
 
   const handleChangeContributor = useCallback((event: SelectChangeEvent) => {
     setContributor(event.target.value)
@@ -116,27 +109,33 @@ const Project = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow
-                key={row.name}
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {row.name}
-                </TableCell>
-                <TableCell align="left">{row.calories}</TableCell>
-                <TableCell align="left">{row.fat}</TableCell>
-                <TableCell align="left">{row.carbs}</TableCell>
-                <TableCell align="left">
-                  <Button variant="text" color="error" onClick={handleDialog}>
-                    Reject
-                  </Button>
-                  <Button variant="text" onClick={handleDialog}>
-                    Approve
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {recordsQuery.data?.map((row) => {
+              const { doc, id } = row.entry
+              return (
+                <TableRow
+                  key={id}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {doc.user}
+                  </TableCell>
+                  <TableCell align="left">{doc.contribution}</TableCell>
+                  <TableCell align="left">{doc.point}</TableCell>
+                  <TableCell align="left">{doc.status}</TableCell>
+                  <TableCell align="left">
+                    <Button variant="text" color="error" onClick={handleDialog}>
+                      Reject
+                    </Button>
+                    <Button variant="text" onClick={handleDialog}>
+                      Approve
+                    </Button>
+                    <Button variant="text" onClick={handleDialog}>
+                      Claim
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </TableContainer>

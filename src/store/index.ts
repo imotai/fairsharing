@@ -1,12 +1,32 @@
-import { DB3Store, collection, query, addDoc, where, getDocs } from 'db3.js'
+import {
+  DB3Store,
+  collection,
+  query,
+  addDoc,
+  where,
+  getDocs,
+  MetamaskWallet,
+  initializeDB3,
+} from 'db3.js'
 import { proxy } from 'valtio'
 
-export const store = proxy<{ db: DB3Store | null }>({
-  db: null,
+export const store = proxy<{ initDb: boolean }>({
+  initDb: false,
 })
 
-export const addDB = (db: DB3Store) => {
-  store.db = db
+let db3: DB3Store
+
+export const addDB = async () => {
+  // @ts-ignore
+  const wallet = new MetamaskWallet(window)
+  await wallet.connect()
+  const { db } = initializeDB3(
+    'https://grpc.devnet.db3.network',
+    '0xf94c8287560cd1572d81e67e25c995eb23b759b4',
+    wallet
+  )
+  db3 = db
+  store.initDb = true
 }
 
 interface Records {
@@ -23,8 +43,8 @@ interface Records {
 }
 
 export const getRecords = async (contract: string) => {
-  if (!store.db) return []
-  const collectionRef = await collection<Records>(store.db, 'records')
+  if (!db3) return []
+  const collectionRef = await collection<Records>(db3, 'records')
   const { docs } = await getDocs<Records>(
     query(collectionRef, where('contract', '==', contract))
   )
@@ -32,7 +52,7 @@ export const getRecords = async (contract: string) => {
 }
 
 export const addRecord = async (data: Records) => {
-  if (!store.db) return
-  const collectionRef = await collection<Records>(store.db, 'records')
+  if (!db3) return
+  const collectionRef = await collection<Records>(db3, 'records')
   await addDoc<Records>(collectionRef, data)
 }

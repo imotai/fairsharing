@@ -28,7 +28,7 @@ export default function Example() {
 
   const factoryContract = useContract({
     // todo put in the env
-    address: '0x5eE4dD2C7dE5e08c92BB578a116d07558a72C9EF',
+    address: '0xe7bFf2ce0EE5d23df03c404db523e980C1D5Bc37',
     abi: factoryabi,
     signerOrProvider: signer,
   })
@@ -158,6 +158,13 @@ export default function Example() {
           </Button>
           Notes: 1. only record creator can claim. 2. the creator must be a
           member.
+          <Button
+            onClick={() => {
+              // todo deposit
+            }}
+          >
+            Deposit
+          </Button>
         </Box>
       )}
     </Box>

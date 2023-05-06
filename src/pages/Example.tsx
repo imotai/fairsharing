@@ -36,7 +36,7 @@ export default function Example() {
 
   // todo need to create a new component or find a way to update the contact address
   const fairSharingContract = useContract({
-    address: '0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266',
+    address: '0x692AA611ee4292426eE271443ce26De79A20aE81',
     abi: instanceabi,
     signerOrProvider: signer,
   })
@@ -65,7 +65,7 @@ export default function Example() {
             'FairDAO',
             'FD',
             // todo add the member lists
-            ['', '', ''],
+            ['0x303A8F5F57A7E6b6584c6C177FC246b721106455'],
             address
           )
           // todo pop up the notification or toast
@@ -86,16 +86,16 @@ export default function Example() {
       <Box>
         <Button
           onClick={() => {
-            setCurrentDAO('0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266')
+            setCurrentDAO('0x692AA611ee4292426eE271443ce26De79A20aE81')
           }}
         >
-          Use the 0x3a564eE2dF78Eb1c6871Ff93ad9BF54937b34266 DAO as example
+          Use the 0x692AA611ee4292426eE271443ce26De79A20aE81 DAO as example
         </Button>
       </Box>
       <Box>current dao: {currentDAO}</Box>
       {currentDAO && (
         <Box marginTop={2}>
-          Requester: 0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14 <br />{' '}
+          Requester: 0x303A8F5F57A7E6b6584c6C177FC246b721106455 <br />{' '}
           ContributionID: 36f38aff-c171-4461-9c4d-a2f7eafee2da
           <br /> Reason: I contributed a lot.
           <br />
@@ -103,10 +103,10 @@ export default function Example() {
           <Button
             onClick={async () => {
               const msgHash = utils.solidityKeccak256(
-                ['address', 'uint256', 'address', 'bool', 'uint256'],
+                ['address', 'bytes32', 'address', 'bool', 'uint256'],
                 [
-                  '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
-                  1,
+                  '0x303A8F5F57A7E6b6584c6C177FC246b721106455',
+                  utils.formatBytes32String('1'),
                   await signer?.getAddress(),
                   true,
                   utils.parseEther('30'),
@@ -123,10 +123,10 @@ export default function Example() {
           <Button
             onClick={async () => {
               const msgHash = utils.solidityKeccak256(
-                ['address', 'uint256', 'address', 'bool', 'uint256'],
+                ['address', 'bytes32', 'address', 'bool', 'uint256'],
                 [
-                  '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
-                  1,
+                  '0x303A8F5F57A7E6b6584c6C177FC246b721106455',
+                  utils.formatBytes32String('1'),
                   await signer?.getAddress(),
                   false,
                   utils.parseEther('30'),
@@ -143,13 +143,18 @@ export default function Example() {
           <Button
             onClick={async () => {
               console.log('fairSharingContract: ', fairSharingContract)
-              const tx = fairSharingContract?.claim(1, utils.parseEther('30'), [
-                {
-                  voter: '0x147b166fb4f1Aa9581D184596Dbabe2980ba4b14',
-                  approve: true,
-                  signature: '',
-                },
-              ])
+              const tx = fairSharingContract?.claim(
+                utils.formatBytes32String('1'),
+                utils.parseEther('30'),
+                [
+                  {
+                    voter: '0x303A8F5F57A7E6b6584c6C177FC246b721106455',
+                    approve: true,
+                    signature:
+                      '0x61a8c238f49865e62fafa38fe40832ed04b3af8ae430a6616a7c8cf7f9b42a6776022ce00a0f2974fd443f6d8adf2ecdd5cb90d5ab803f11f6d809a857f8d9eb1c',
+                  },
+                ]
+              )
               // todo pop up the notification or toast
               console.log('tx', tx)
             }}

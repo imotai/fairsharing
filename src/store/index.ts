@@ -31,7 +31,7 @@ export const addDB = async () => {
 
 interface Records {
   contract: string
-  user: string
+  user: `0x${string}`
   contribution: string
   point: number
   status: number
@@ -54,5 +54,5 @@ export const getRecords = async (contract: string) => {
 export const addRecord = async (data: Records) => {
   if (!db3) return
   const collectionRef = await collection<Records>(db3, 'records')
-  await addDoc<Records>(collectionRef, data)
+  return await addDoc<Records>(collectionRef, data)
 }

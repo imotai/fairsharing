@@ -18,7 +18,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { array, object, string, TypeOf } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import factoryabi from '@/factoryabi.json'
-import fairSharingAbi from '@/fairSharingAbi.json'
+import fairSharingAbi from '@/fairSharingabi.json'
 import { readContract } from '@wagmi/core'
 import { useRouter } from 'next/router'
 

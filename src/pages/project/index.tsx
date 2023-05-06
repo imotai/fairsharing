@@ -24,7 +24,7 @@ import {
 } from '@mui/material'
 import { useRouter } from 'next/router'
 import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
-import fairSharingAbi from '@/fairSharingAbi.json'
+import fairSharingAbi from '@/fairSharingabi.json'
 import { addRecord, getRecords } from '@/store'
 
 function createData(

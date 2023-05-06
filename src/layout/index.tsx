@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
       )
       addDB(db)
     }
-    // init()
+    init()
   }, [isConnected])
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F9FB]">

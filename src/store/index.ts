@@ -1,4 +1,4 @@
-import { DB3Store, collection, getDocs, addDoc } from 'db3.js'
+import { DB3Store, collection, query, addDoc, where, getDocs } from 'db3.js'
 import { proxy } from 'valtio'
 
 export const store = proxy<{ db: DB3Store | null }>({
@@ -9,23 +9,30 @@ export const addDB = (db: DB3Store) => {
   store.db = db
 }
 
-interface Projects {
-  wallet: string
-  name: string
+interface Records {
+  contract: string
+  user: string
+  contribution: string
+  point: number
+  status: number
+  votes?: {
+    user: string
+    approve: boolean
+    signature: string
+  }[]
 }
 
-export const getProjects = async () => {
+export const getRecords = async (contract: string) => {
   if (!store.db) return []
-  const collectionRef = await collection<Projects>(store.db, 'projects')
-  const { docs } = await getDocs<Projects>(collectionRef)
+  const collectionRef = await collection<Records>(store.db, 'records')
+  const { docs } = await getDocs<Records>(
+    query(collectionRef, where('contract', '==', contract))
+  )
   return docs
 }
 
-export const addProject = async ({ wallet, name }: { wallet: string, name: string }) => {
+export const addRecord = async (data: Records) => {
   if (!store.db) return
-  const collectionRef = await collection<Projects>(store.db, 'projects')
-  await addDoc<Projects>(collectionRef, {
-    wallet,
-    name
-  })
+  const collectionRef = await collection<Records>(store.db, 'records')
+  await addDoc<Records>(collectionRef, data)
 }

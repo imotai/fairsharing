@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Layout from '@/layout'
 import {
   Breadcrumbs,
@@ -23,6 +23,9 @@ import {
   DialogContentText,
 } from '@mui/material'
 import { useRouter } from 'next/router'
+import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
+import fairSharingAbi from '@/fairSharingAbi.json'
+import { addRecord, getRecords } from '@/store'
 
 function createData(
   name: string,
@@ -44,9 +47,35 @@ const rows = [
 
 const Project = () => {
   const router = useRouter()
+  const contractAddress = router.query.address as string
+  const { address } = useAccount()
+  const { data: signer } = useSigner()
+  const factoryContract = useContract({
+    address: contractAddress,
+    abi: fairSharingAbi,
+    signerOrProvider: signer,
+  })
 
-  const [contributor, setContributor] = React.useState('All')
-  const [showDialog, setShowDialog] = React.useState(false)
+  const [contributor, setContributor] = useState('All')
+  const [showDialog, setShowDialog] = useState(false)
+
+  const recordsQuery = useQuery(
+    ['getRecords', contractAddress],
+    () => getRecords(contractAddress),
+    {
+      enabled: !!contractAddress,
+    }
+  )
+
+  useEffect(() => {
+    // addRecord({
+    //   contract: '0x7e55AcDff1189e932A73af678A2B9cE76dBf8544',
+    //   status: 0,
+    //   user: '0xC664B68aFceD392656Ed8c4adaEFa8E8ffBF65DC',
+    //   point: 30,
+    //   contribution: '12321312',
+    // })
+  }, [])
 
   const handleChangeContributor = useCallback((event: SelectChangeEvent) => {
     setContributor(event.target.value)
@@ -75,19 +104,6 @@ const Project = () => {
       <Typography variant="h4" className="text-[#272D37] my-6">
         Contributions
       </Typography>
-      <Select
-        className="w-[150px] mb-6"
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
-        value={contributor}
-        label="Contributor"
-        onChange={handleChangeContributor}
-      >
-        <MenuItem value="All">All</MenuItem>
-        <MenuItem value={10}>Ten</MenuItem>
-        <MenuItem value={20}>Twenty</MenuItem>
-        <MenuItem value={30}>Thirty</MenuItem>
-      </Select>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>

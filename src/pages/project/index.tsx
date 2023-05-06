@@ -12,8 +12,6 @@ import {
   TableCell,
   TableBody,
   TablePagination,
-  Select,
-  MenuItem,
   SelectChangeEvent,
   Button,
   Dialog,
@@ -21,30 +19,26 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  TextField,
+  IconButton,
 } from '@mui/material'
 import { useRouter } from 'next/router'
 import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
 import fairSharingAbi from '@/fairSharingabi.json'
 import { addRecord, getRecords, store } from '@/store'
 import { useSnapshot } from 'valtio'
+import { array, number, object, string, TypeOf } from 'zod'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Add, Remove } from '@mui/icons-material'
+import { LoadingButton } from '@mui/lab'
 
-function createData(
-  name: string,
-  calories: number,
-  fat: number,
-  carbs: number,
-  protein: number
-) {
-  return { name, calories, fat, carbs, protein }
-}
+const registerSchema = object({
+  contribution: string().nonempty('contribution is required'),
+  point: number().min(0, 'point should be greater than 0'),
+})
 
-const rows = [
-  createData('Frozen yoghurt', 159, 6.0, 24, 4.0),
-  createData('Ice cream sandwich', 237, 9.0, 37, 4.3),
-  createData('Eclair', 262, 16.0, 24, 6.0),
-  createData('Cupcake', 305, 3.7, 67, 4.3),
-  createData('Gingerbread', 356, 16.0, 49, 3.9),
-]
+type FormData = TypeOf<typeof registerSchema>
 
 const Project = () => {
   const router = useRouter()
@@ -57,9 +51,18 @@ const Project = () => {
     abi: fairSharingAbi,
     signerOrProvider: signer,
   })
+  const {
+    control,
+    formState: { errors },
+    handleSubmit,
+    reset,
+  } = useForm<FormData>({
+    resolver: zodResolver(registerSchema),
+  })
 
   const [contributor, setContributor] = useState('All')
-  const [showDialog, setShowDialog] = useState(false)
+  const [showVoteDialog, setShowVoteDialog] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
 
   const recordsQuery = useQuery(
     ['getRecords', contractAddress],
@@ -68,14 +71,17 @@ const Project = () => {
       enabled: !!contractAddress && store.initDb,
     }
   )
-  console.log(recordsQuery.data)
 
   const handleChangeContributor = useCallback((event: SelectChangeEvent) => {
     setContributor(event.target.value)
   }, [])
 
-  const handleDialog = useCallback(() => {
-    setShowDialog((v) => !v)
+  const handleVoteDialog = useCallback(() => {
+    setShowVoteDialog((v) => !v)
+  }, [])
+
+  const handleAddDialog = useCallback(() => {
+    setShowAddDialog((v) => !v)
   }, [])
 
   return (
@@ -97,6 +103,14 @@ const Project = () => {
       <Typography variant="h4" className="text-[#272D37] my-6">
         Contributions
       </Typography>
+      <Button
+        size="large"
+        variant="contained"
+        onClick={handleAddDialog}
+        className="mb-8 w-[250px]"
+      >
+        Add Contribution
+      </Button>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
@@ -123,13 +137,17 @@ const Project = () => {
                   <TableCell align="left">{doc.point}</TableCell>
                   <TableCell align="left">{doc.status}</TableCell>
                   <TableCell align="left">
-                    <Button variant="text" color="error" onClick={handleDialog}>
+                    <Button
+                      variant="text"
+                      color="error"
+                      onClick={handleVoteDialog}
+                    >
                       Reject
                     </Button>
-                    <Button variant="text" onClick={handleDialog}>
+                    <Button variant="text" onClick={handleVoteDialog}>
                       Approve
                     </Button>
-                    <Button variant="text" onClick={handleDialog}>
+                    <Button variant="text" onClick={handleVoteDialog}>
                       Claim
                     </Button>
                   </TableCell>
@@ -141,15 +159,15 @@ const Project = () => {
       </TableContainer>
       <TablePagination
         component="div"
-        count={rows.length}
+        count={recordsQuery.data?.length || 0}
         rowsPerPage={5}
         rowsPerPageOptions={[10]}
         page={0}
         onPageChange={() => {}}
       />
       <Dialog
-        open={showDialog}
-        onClose={handleDialog}
+        open={showVoteDialog}
+        onClose={handleVoteDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
@@ -160,10 +178,62 @@ const Project = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialog}>Cancel</Button>
+          <Button onClick={handleVoteDialog}>Cancel</Button>
           <Button onClick={() => {}} autoFocus>
             Agree
           </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={showAddDialog}
+        onClose={handleAddDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Add Contribution</DialogTitle>
+        <DialogContent>
+          <form className="flex flex-col min-w-[400px]">
+            <Controller
+              name="contribution"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <TextField
+                  required
+                  multiline
+                  label="Contribution"
+                  margin="normal"
+                  error={!!errors['contribution']}
+                  helperText={
+                    errors['contribution'] ? errors['contribution'].message : ''
+                  }
+                  {...field}
+                />
+              )}
+            />
+            <Controller
+              name="point"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <TextField
+                  required
+                  type="number"
+                  label="Point"
+                  margin="normal"
+                  error={!!errors['point']}
+                  helperText={errors['point'] ? errors['point'].message : ''}
+                  {...field}
+                />
+              )}
+            />
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAddDialog}>Cancel</Button>
+          <LoadingButton onClick={() => {}} autoFocus>
+            Done
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </Layout>

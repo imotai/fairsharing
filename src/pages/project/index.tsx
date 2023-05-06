@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import Layout from '@/layout'
 import {
   Breadcrumbs,
@@ -20,22 +20,20 @@ import {
   DialogActions,
   DialogContentText,
   TextField,
-  IconButton,
 } from '@mui/material'
 import { useRouter } from 'next/router'
 import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
 import fairSharingAbi from '@/fairSharingabi.json'
 import { addRecord, getRecords, store } from '@/store'
 import { useSnapshot } from 'valtio'
-import { array, number, object, string, TypeOf } from 'zod'
+import { object, string, TypeOf, coerce } from 'zod'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Add, Remove } from '@mui/icons-material'
 import { LoadingButton } from '@mui/lab'
 
 const registerSchema = object({
   contribution: string().nonempty('contribution is required'),
-  point: number().min(0, 'point should be greater than 0'),
+  point: coerce.number().min(0, 'point should be greater than 0'),
 })
 
 type FormData = TypeOf<typeof registerSchema>
@@ -83,6 +81,26 @@ const Project = () => {
   const handleAddDialog = useCallback(() => {
     setShowAddDialog((v) => !v)
   }, [])
+
+  const handleFinish = useCallback(
+    async (data: FormData) => {
+      if (!address) return
+      const { contribution, point } = data
+      await addRecord({
+        contribution,
+        point,
+        user: address,
+        status: 0,
+        contract: contractAddress,
+      })
+      setTimeout(async () => {
+        await recordsQuery.refetch()
+        handleAddDialog()
+        reset()
+      }, 2000)
+    },
+    [address, contractAddress, handleAddDialog, recordsQuery, reset]
+  )
 
   return (
     <Layout>
@@ -160,7 +178,7 @@ const Project = () => {
       <TablePagination
         component="div"
         count={recordsQuery.data?.length || 0}
-        rowsPerPage={5}
+        rowsPerPage={3}
         rowsPerPageOptions={[10]}
         page={0}
         onPageChange={() => {}}
@@ -231,7 +249,7 @@ const Project = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleAddDialog}>Cancel</Button>
-          <LoadingButton onClick={() => {}} autoFocus>
+          <LoadingButton onClick={handleSubmit(handleFinish)} autoFocus>
             Done
           </LoadingButton>
         </DialogActions>

@@ -286,13 +286,14 @@ export default function Home() {
     <Layout>
       <div className="flex items-center justify-center flex-1 flex-col mt-12">
         <Typography variant="h2" className="font-bold text-[#272D37] mb-6">
-          A tool for LaborDAO
+          A tool for fair sharing
         </Typography>
         <Typography
           variant="subtitle1"
           className="text-lg text-[#5F6D7E] mb-12"
         >
-          Upgrade your side project into a DAO and turbocharge it.
+          Upgrade your side project into a DAO and turbocharge it. (Please
+          connect wallet first)
         </Typography>
         {children}
         <Snackbar

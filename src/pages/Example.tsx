@@ -164,8 +164,13 @@ export default function Example() {
           Notes: 1. only record creator can claim. 2. the creator must be a
           member.
           <Button
-            onClick={() => {
-              // todo deposit
+            onClick={async () => {
+              const amountInWei = ethers.utils.parseEther('0.02')
+              const tx = await fairSharingContract?.sharing({
+                value: amountInWei,
+              })
+              await tx.wait()
+              console.log('tx', tx)
             }}
           >
             Deposit

@@ -28,7 +28,7 @@ export default function Example() {
 
   const factoryContract = useContract({
     // todo put in the env
-    address: '0xe7bFf2ce0EE5d23df03c404db523e980C1D5Bc37',
+    address: '0x946aF86636AE5c93be24808Bbed7cfA65258aCbE',
     abi: factoryabi,
     signerOrProvider: signer,
   })
@@ -36,7 +36,7 @@ export default function Example() {
 
   // todo need to create a new component or find a way to update the contact address
   const fairSharingContract = useContract({
-    address: '0x692AA611ee4292426eE271443ce26De79A20aE81',
+    address: '0x9c92dBdf062A2C877cB207C29d46116B989145E9',
     abi: instanceabi,
     signerOrProvider: signer,
   })
@@ -86,10 +86,10 @@ export default function Example() {
       <Box>
         <Button
           onClick={() => {
-            setCurrentDAO('0x692AA611ee4292426eE271443ce26De79A20aE81')
+            setCurrentDAO('0x9c92dBdf062A2C877cB207C29d46116B989145E9')
           }}
         >
-          Use the 0x692AA611ee4292426eE271443ce26De79A20aE81 DAO as example
+          Use the 0x9c92dBdf062A2C877cB207C29d46116B989145E9 DAO as example
         </Button>
       </Box>
       <Box>current dao: {currentDAO}</Box>
@@ -143,6 +143,7 @@ export default function Example() {
           <Button
             onClick={async () => {
               console.log('fairSharingContract: ', fairSharingContract)
+              console.log(utils.formatBytes32String('1'))
               const tx = fairSharingContract?.claim(
                 utils.formatBytes32String('1'),
                 utils.parseEther('30'),

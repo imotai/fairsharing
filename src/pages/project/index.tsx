@@ -286,7 +286,7 @@ const Project = () => {
           size="large"
           variant="contained"
           onClick={handleAddDialog}
-          className="mb-8 mr-4 w-[250px]"
+          className="mb-8 mr-6 w-[250px]"
         >
           Add Contribution
         </Button>

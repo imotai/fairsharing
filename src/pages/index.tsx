@@ -233,7 +233,7 @@ export default function Home() {
           size="large"
           variant="contained"
           onClick={handleCreate}
-          className="mb-8"
+          className="mb-12"
         >
           Create a project
         </Button>

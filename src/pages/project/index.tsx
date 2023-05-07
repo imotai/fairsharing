@@ -38,7 +38,12 @@ const registerSchema = object({
   point: coerce.number().min(0, 'point should be greater than 0'),
 })
 
+const registerDepositSchema = object({
+  value: coerce.number().min(0, 'value should be greater than 0'),
+})
+
 type FormData = TypeOf<typeof registerSchema>
+type DepositFormData = TypeOf<typeof registerDepositSchema>
 
 type CurrentRecord = {
   voteType: string
@@ -64,8 +69,13 @@ const Project = () => {
     resolver: zodResolver(registerSchema),
   })
 
+  const deposiForm = useForm<DepositFormData>({
+    resolver: zodResolver(registerDepositSchema),
+  })
+
   const [showVoteDialog, setShowVoteDialog] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showDepositDialog, setShowDepositDialog] = useState(false)
   const [record, setRecord] = useState<CurrentRecord | null>(null)
   const [loading, setLoading] = useState(false)
   const [snackbarInfo, setSnackbarInfo] = useState({
@@ -228,6 +238,30 @@ const Project = () => {
     [address, contractAddress, handleAddDialog, recordsQuery, reset]
   )
 
+  const handleDeposit = useCallback(
+    async (data: DepositFormData) => {
+      setLoading(true)
+      try {
+        const amountInWei = utils.parseEther(data.value.toString())
+        const tx = await fairSharingContract?.sharing({
+          value: amountInWei,
+        })
+        await tx.wait()
+        setSnackbarInfo({
+          open: true,
+          text: 'Deposit success!',
+        })
+        setShowDepositDialog(false)
+        deposiForm.reset({})
+      } catch (e) {
+        console.log(e)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [deposiForm, fairSharingContract]
+  )
+
   return (
     <Layout>
       <Breadcrumbs
@@ -247,14 +281,24 @@ const Project = () => {
       <Typography variant="h4" className="text-[#272D37] my-6">
         Contributions
       </Typography>
-      <Button
-        size="large"
-        variant="contained"
-        onClick={handleAddDialog}
-        className="mb-8 w-[250px]"
-      >
-        Add Contribution
-      </Button>
+      <div className="flex">
+        <Button
+          size="large"
+          variant="contained"
+          onClick={handleAddDialog}
+          className="mb-8 mr-4 w-[250px]"
+        >
+          Add Contribution
+        </Button>
+        <Button
+          size="large"
+          variant="contained"
+          onClick={() => setShowDepositDialog(true)}
+          className="mb-8 w-[250px]"
+        >
+          Deposit
+        </Button>
+      </div>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
@@ -354,6 +398,50 @@ const Project = () => {
             autoFocus
           >
             {record?.voteType}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={showDepositDialog}
+        onClose={() => setShowDepositDialog((v) => !v)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Deposit</DialogTitle>
+        <DialogContent className="w-[400px]">
+          <form className="flex flex-col min-w-[400px]">
+            <Controller
+              name="value"
+              control={deposiForm.control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <TextField
+                  required
+                  type="number"
+                  label="Point"
+                  margin="normal"
+                  error={!!deposiForm.formState.errors['value']}
+                  helperText={
+                    deposiForm.formState.errors['value']
+                      ? deposiForm.formState.errors['value'].message
+                      : ''
+                  }
+                  {...field}
+                />
+              )}
+            />
+          </form>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDepositDialog((v) => !v)}>
+            Cancel
+          </Button>
+          <LoadingButton
+            loading={loading}
+            onClick={deposiForm.handleSubmit(handleDeposit)}
+            autoFocus
+          >
+            Done
           </LoadingButton>
         </DialogActions>
       </Dialog>

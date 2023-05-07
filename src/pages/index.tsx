@@ -104,7 +104,7 @@ export default function Home() {
       const { projectName, contributors } = data
       const tx = await factoryContract?.createFairSharing(
         projectName,
-        'FD',
+        projectName,
         contributors.map((item) => item.name),
         address
       )

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import Layout from '@/layout'
 import {
   Breadcrumbs,
@@ -12,7 +12,6 @@ import {
   TableCell,
   TableBody,
   TablePagination,
-  SelectChangeEvent,
   Button,
   Dialog,
   DialogTitle,
@@ -20,22 +19,19 @@ import {
   DialogActions,
   DialogContentText,
   TextField,
+  Alert,
+  Snackbar,
 } from '@mui/material'
 import { useRouter } from 'next/router'
-import {
-  useAccount,
-  useContract,
-  useQuery,
-  useSigner,
-  useContractRead,
-} from 'wagmi'
+import { useAccount, useContract, useQuery, useSigner } from 'wagmi'
 import fairSharingAbi from '@/fairSharingabi.json'
-import { addRecord, getRecords, store } from '@/store'
-import { useSnapshot } from 'valtio'
+import { addRecord, getRecords, store, Records, updateRecord } from '@/store'
 import { object, string, TypeOf, coerce } from 'zod'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoadingButton } from '@mui/lab'
+import { DocumentReference } from 'db3.js'
+import { utils } from 'ethers'
 
 const registerSchema = object({
   contribution: string().nonempty('contribution is required'),
@@ -44,10 +40,13 @@ const registerSchema = object({
 
 type FormData = TypeOf<typeof registerSchema>
 
+type CurrentRecord = {
+  voteType: string
+} & DocumentReference<Records>
+
 const Project = () => {
   const router = useRouter()
   const contractAddress = router.query.address as any
-  const snap = useSnapshot(store)
   const { address } = useAccount()
   const { data: signer } = useSigner()
   const fairSharingContract = useContract({
@@ -55,23 +54,6 @@ const Project = () => {
     abi: fairSharingAbi,
     signerOrProvider: signer,
   })
-  // const { data, isError, isLoading } = useContractRead({
-  //   address: contractAddress,
-  //   abi: fairSharingAbi,
-  //   functionName: 'membersList',
-  //   args: [0],
-  // })
-
-  useEffect(() => {
-    ;(async () => {
-      if (fairSharingContract && fairSharingContract.provider) {
-        
-        console.log('fairSharingContract: ', fairSharingContract)
-        const members = await fairSharingContract.totalMembers()
-        console.log('members: ', parseInt(members))
-      }
-    })()
-  }, [fairSharingContract])
 
   const {
     control,
@@ -82,9 +64,14 @@ const Project = () => {
     resolver: zodResolver(registerSchema),
   })
 
-  const [contributor, setContributor] = useState('All')
   const [showVoteDialog, setShowVoteDialog] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [record, setRecord] = useState<CurrentRecord | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [snackbarInfo, setSnackbarInfo] = useState({
+    open: false,
+    text: '',
+  })
 
   const recordsQuery = useQuery(
     ['getRecords', contractAddress],
@@ -94,13 +81,121 @@ const Project = () => {
     }
   )
 
-  const handleChangeContributor = useCallback((event: SelectChangeEvent) => {
-    setContributor(event.target.value)
-  }, [])
+  // const membersQuery = useQuery(
+  //   ['getMembers'],
+  //   async () => {
+  //     if (!fairSharingContract) return []
+  //     const members = await fairSharingContract.totalMembers()
+  //     let list: string[] = []
+  //     for (let i = 0; i < members; i++) {
+  //       const item = await fairSharingContract.membersList(i)
+  //       list = [...list, item]
+  //     }
+  //     return list
+  //   },
+  //   {
+  //     enabled: !!fairSharingContract && !!fairSharingContract.provider,
+  //   }
+  // )
+  //
+  // console.log(membersQuery.data)
 
-  const handleVoteDialog = useCallback(() => {
-    setShowVoteDialog((v) => !v)
-  }, [])
+  const handleVoteDialog = useCallback(
+    async (voteType: string, record: DocumentReference<Records>) => {
+      const user = await signer?.getAddress()
+      const voteData = record.entry.doc.votes?.find(
+        (vote) => vote.voter === user
+      )
+      if (voteData && voteType !== 'claim') {
+        return
+      }
+
+      setShowVoteDialog((v) => !v)
+      setRecord({
+        voteType,
+        ...record,
+      })
+    },
+    [signer]
+  )
+
+  const handleVote = useCallback(async () => {
+    if (!record || !signer) return
+    setLoading(true)
+    try {
+      const {
+        voteType,
+        entry: {
+          id,
+          doc: { user, point, votes = [] },
+        },
+      } = record
+      const isApproved = voteType === 'approve'
+      const voter = await signer.getAddress()
+
+      const msgHash = utils.solidityKeccak256(
+        ['address', 'bytes32', 'address', 'bool', 'uint256'],
+        [
+          user,
+          utils.keccak256(utils.hexlify(utils.toUtf8Bytes(id))),
+          voter,
+          isApproved,
+          utils.parseEther(point.toString()),
+        ]
+      )
+      const signature = await signer.signMessage(utils.arrayify(msgHash))
+      votes.push({
+        approve: isApproved,
+        voter,
+        signature,
+      })
+      await updateRecord(record, {
+        ...record.entry.doc,
+        votes,
+      })
+      setSnackbarInfo({
+        open: true,
+        text: 'Vote success!',
+      })
+      setShowVoteDialog(false)
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setLoading(false)
+    }
+  }, [signer, record])
+
+  const handleClaim = useCallback(async () => {
+    if (!record || !fairSharingContract) return
+    setLoading(true)
+    try {
+      const {
+        entry: {
+          id,
+          doc: { votes = [], point },
+        },
+      } = record
+      const tx = await fairSharingContract.claim(
+        utils.keccak256(utils.hexlify(utils.toUtf8Bytes(id))),
+        utils.parseEther(point.toString()),
+        votes
+      )
+      await tx.wait()
+      await updateRecord(record, {
+        ...record.entry.doc,
+        status: 1,
+      })
+      setSnackbarInfo({
+        open: true,
+        text: 'Claim success!',
+      })
+      setShowVoteDialog(false)
+    } catch (e) {
+      console.log(e)
+    } finally {
+      setLoading(false)
+    }
+  }, [fairSharingContract, record])
 
   const handleAddDialog = useCallback(() => {
     setShowAddDialog((v) => !v)
@@ -110,6 +205,7 @@ const Project = () => {
     async (data: FormData) => {
       if (!address) return
       // TODO 鉴权
+      setLoading(true)
       const { contribution, point } = data
       await addRecord({
         contribution,
@@ -120,8 +216,13 @@ const Project = () => {
       })
       setTimeout(async () => {
         await recordsQuery.refetch()
+        setSnackbarInfo({
+          open: true,
+          text: 'Add contribution success!',
+        })
+        setLoading(false)
         handleAddDialog()
-        reset()
+        reset({})
       }, 2000)
     },
     [address, contractAddress, handleAddDialog, recordsQuery, reset]
@@ -168,6 +269,15 @@ const Project = () => {
           <TableBody>
             {recordsQuery.data?.map((row) => {
               const { doc, id } = row.entry
+              let approveCount = 0
+              let rejectCount = 0
+              doc.votes?.forEach((vote) => {
+                if (vote.approve) {
+                  approveCount++
+                } else {
+                  rejectCount++
+                }
+              })
               return (
                 <TableRow
                   key={id}
@@ -178,19 +288,29 @@ const Project = () => {
                   </TableCell>
                   <TableCell align="left">{doc.contribution}</TableCell>
                   <TableCell align="left">{doc.point}</TableCell>
-                  <TableCell align="left">{doc.status}</TableCell>
+                  <TableCell align="left">
+                    {doc.status === 1
+                      ? 'claimed'
+                      : `approve: ${approveCount}, reject: ${rejectCount}`}
+                  </TableCell>
                   <TableCell align="left">
                     <Button
                       variant="text"
                       color="error"
-                      onClick={handleVoteDialog}
+                      onClick={() => handleVoteDialog('reject', row)}
                     >
                       Reject
                     </Button>
-                    <Button variant="text" onClick={handleVoteDialog}>
+                    <Button
+                      variant="text"
+                      onClick={() => handleVoteDialog('approve', row)}
+                    >
                       Approve
                     </Button>
-                    <Button variant="text" onClick={handleVoteDialog}>
+                    <Button
+                      variant="text"
+                      onClick={() => handleVoteDialog('claim', row)}
+                    >
                       Claim
                     </Button>
                   </TableCell>
@@ -210,21 +330,31 @@ const Project = () => {
       />
       <Dialog
         open={showVoteDialog}
-        onClose={handleVoteDialog}
+        onClose={() => setShowVoteDialog((v) => !v)}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Vote</DialogTitle>
-        <DialogContent>
+        <DialogTitle id="alert-dialog-title">Vote Action</DialogTitle>
+        <DialogContent className="w-[400px]">
           <DialogContentText>
-            You can set my maximum width and whether to adapt or not.
+            Do you want to {record?.voteType} this contribution?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleVoteDialog}>Cancel</Button>
-          <Button onClick={() => {}} autoFocus>
-            Agree
-          </Button>
+          <Button onClick={() => setShowVoteDialog((v) => !v)}>Cancel</Button>
+          <LoadingButton
+            loading={loading}
+            onClick={() => {
+              if (record?.voteType === 'claim') {
+                handleClaim()
+              } else {
+                handleVote()
+              }
+            }}
+            autoFocus
+          >
+            {record?.voteType}
+          </LoadingButton>
         </DialogActions>
       </Dialog>
       <Dialog
@@ -274,11 +404,39 @@ const Project = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleAddDialog}>Cancel</Button>
-          <LoadingButton onClick={handleSubmit(handleFinish)} autoFocus>
+          <LoadingButton
+            loading={loading}
+            onClick={handleSubmit(handleFinish)}
+            autoFocus
+          >
             Done
           </LoadingButton>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbarInfo.open}
+        onClose={() =>
+          setSnackbarInfo((v) => ({
+            ...v,
+            open: false,
+          }))
+        }
+        autoHideDuration={5000}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="success"
+          sx={{ width: '100%' }}
+          onClose={() =>
+            setSnackbarInfo((v) => ({
+              ...v,
+              open: false,
+            }))
+          }
+        >
+          {snackbarInfo.text}
+        </Alert>
+      </Snackbar>
     </Layout>
   )
 }

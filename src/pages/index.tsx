@@ -62,7 +62,7 @@ export default function Home() {
   const { data: signer } = useSigner()
   const factoryContract = useContract({
     // todo put in the env
-    address: '0x28395533De12B719B70Bdfc53968017D53729A80',
+    address: '0xe7bFf2ce0EE5d23df03c404db523e980C1D5Bc37',
     abi: factoryabi,
     signerOrProvider: signer,
   })
